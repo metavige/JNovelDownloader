@@ -1,4 +1,4 @@
-package JNovelDownloader.Kernel;
+package jNovel.kernel;
 
 import java.io.BufferedReader;
 import java.io.FileOutputStream;

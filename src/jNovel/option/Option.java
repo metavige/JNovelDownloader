@@ -1,4 +1,4 @@
-package JNovelDownloader.Option;
+package jNovel.option;
 
 import java.io.*;
 
@@ -13,11 +13,12 @@ public class Option {
 	private File file;
 	public int threadNumber;
 
-	public Option() throws IOException {
+    public Option() throws IOException {
 		file = new File("option.ini");
 		File tempFile;
 		String temp;
 		String []temp2;
+		
 		if (ifNoSetUp()) {
 			BufferedReader reader = new BufferedReader(new InputStreamReader(
 					new FileInputStream(file), "UTF-8"));

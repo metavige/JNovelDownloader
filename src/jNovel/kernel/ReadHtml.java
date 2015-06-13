@@ -1,4 +1,6 @@
-package JNovelDownloader.Kernel;
+package jNovel.kernel;
+
+import jNovel.option.Option;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -6,8 +8,6 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 
 import javax.swing.JTextArea;
-
-import JNovelDownloader.Option.Option;
 
 public class ReadHtml {
 	private String[][] fileName;

@@ -1,4 +1,4 @@
-package JNovelDownloader.Kernel;
+package jNovel.kernel;
 
 public class Replace {
 	

@@ -1,4 +1,9 @@
-package JNovelDownloader.Kernel;
+package jNovel.kernel;
+
+import jNovel.kernel.parser.INovelParser;
+import jNovel.kernel.parser.Ck101Parser;
+import jNovel.kernel.parser.NovelBodyParseStage;
+import jNovel.kernel.parser.ParserFactory;
 
 import java.io.BufferedReader;
 import java.io.FileInputStream;
@@ -22,7 +27,7 @@ public class MakeBookThread extends Thread {
     private JTextArea resultTextArea;
     private String lineSeparator;
 
-    private Parser parser = new Parser();
+    private INovelParser parser;
 
     public MakeBookThread(String[] data, boolean encoding, int type, JTextArea resultTextArea) {
 
@@ -37,6 +42,9 @@ public class MakeBookThread extends Thread {
     public void run() {
 
         System.out.println(type);
+
+        parser = ParserFactory.getParser(type, encoding);
+
         if (type == 1) {
             this.runType1();
         }
@@ -186,7 +194,7 @@ public class MakeBookThread extends Thread {
     private void runType0() {
 
         // boolean inContent = false;
-        int stage = 0; // 0=不再內文中 ,1=在<div class="pbody"> 中,
+        NovelBodyParseStage stage = NovelBodyParseStage.Parpare; // 0=不再內文中 ,1=在<div class="pbody"> 中,
         // 2=在<div class="mes">中 ,
         // 3=<div id="postmessage_~~~~" class="mes">中 ,
         String temp;
@@ -224,14 +232,16 @@ public class MakeBookThread extends Thread {
                 while ((temp = reader.readLine()) != null) { // 一次讀取一行
                     temp = temp.trim();
                     switch (stage) {
-                        case 0:
+                        case Parpare:
+                            // System.out.println(">>>>> 找到本文！");
                             // 第一階段，找出本文主體
                             if (temp.indexOf("class=\"pbody") >= 0) {
-                                stage = 1;
+                                stage = NovelBodyParseStage.EnterBody;
                             }
                             break;
-                        case 1:
+                        case EnterBody:
                             // 第二階段，找出標題
+                            System.out.println(">>>>> 找到標題！");
                             if (temp.indexOf("<h") >= 0) {// 出現標題
 
                                 // temp = Replace.replace(temp, " ", "");
@@ -239,58 +249,64 @@ public class MakeBookThread extends Thread {
 
                                 temp = parser.replaceHtmlTags(temp);
 
-                                bookData.append(temp);
-                                bookData.append(lineSeparator);
+                                // bookData.append(temp);
+                                // bookData.append(lineSeparator);
+                                parser.appendLine(temp);
                             }
 
                             if (temp.indexOf("<div class=\"mes") >= 0) {
                                 // System.out.println(temp);
-                                stage = 2;
+                                stage = NovelBodyParseStage.EnterArticleBegin;
                             }
                             break;
-                        case 2:
+                        case EnterArticleBegin:
                             // 第三階段，找到文章的開頭
+                            System.out.println(">>>>> 找到文章的開頭！" + temp);
+
                             if (temp.indexOf("class=\"postmessage\">") >= 0) {// 找出
                                 // 文章內容
                                 // System.out.println(temp);
-                                stage = 3;
+                                stage = NovelBodyParseStage.EnterArticle;
                                 // String[] temp2 =
                                 // temp.split("class=\"postmessage\">");// 接取標題
                                 // if(temp2.length<=0)
                                 // temp = temp2[1];
 
-                                if (temp.indexOf("<i class=\"pstatus\">") >= 0) { // 過慮修改時間
-                                    temp = temp.replaceAll("<i class=\"pstatus\">[^<>]+ </i>", "");
-                                }
-                                if (temp.indexOf("<div class=\"quote\">") >= 0) { // 過濾
-                                    // 引用
+                                if (temp.indexOf("<div class=\"quote\">") >= 0) { 
+                                    // 過濾引用
                                     otherTable++;
-                                    temp = temp.replaceAll("<font color=\"#999999\">[^<>]+</font>",
-                                            "");
                                 }
-                                parser.parseMessageBodyLine(temp);
+                                
+                                parser.parseMessageBodyStart(temp);
 
                                 // 如果有
                                 // 會有內容，如果沒有是空字串
                             }
                             break;
-                        case 3:
+                        case EnterArticle:
                             // 第四階段，處理本文內容
+                            System.out.println(">>>>> 處理本文內容 " + temp);
 
                             // 判斷是否到了結尾，要準備離開
                             if (temp.indexOf("<div ") >= 0) // 避免碰到下一階層
                             {
+                                System.out.println(">>>>> 發現 div，進入下一層");
                                 otherTable++;
                             }
 
                             if (temp.indexOf("</div>") >= 0) {
                                 if (otherTable > 0) // 從底層離開
-                                otherTable--;
-                                else {// 偵測是否離開了
+                                {
+                                    System.out.println(">>>>> 發現結尾，回到上一層");
+                                    otherTable--;
+                                }
+                                else {
+                                    System.out.println(">>>>> 發現結尾，離開");
+                                    // 偵測是否離開了
                                     temp = temp.replace("</div>", " ");
-                                    stage = 0;
+                                    stage = NovelBodyParseStage.Parpare;
                                     flag = false;
-                                    temp += lineSeparator + lineSeparator + lineSeparator;
+//                                    temp += lineSeparator + lineSeparator + lineSeparator;
                                 }
                             }
 
@@ -309,7 +325,8 @@ public class MakeBookThread extends Thread {
                 e1.printStackTrace();
             }
 
-            bookData.append(lineSeparator);
+            // bookData.append(lineSeparator);
+            parser.appendLine();
 
             try {
                 reader.close();
@@ -320,15 +337,17 @@ public class MakeBookThread extends Thread {
             }
         }
 
-        Encoding encoding = new Encoding();
+        result = parser.toString();
 
-        // System.out.println(bookData.toString());
-        if (this.encoding) {
-            result = encoding.StoT(bookData.toString());
-        }
-        else {
-            result = encoding.TtoS(bookData.toString());
-        }
+        // Encoding encoding = new Encoding();
+        //
+        // // System.out.println(bookData.toString());
+        // if (this.encoding) {
+        // result = encoding.StoT(bookData.toString());
+        // }
+        // else {
+        // result = encoding.TtoS(bookData.toString());
+        // }
     }
 
     public String getResult() {

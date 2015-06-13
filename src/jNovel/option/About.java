@@ -1,4 +1,4 @@
-package JNovelDownloader.Option;
+package jNovel.option;
 
 public class About {
 	public static String version="V 3.9";

@@ -1,4 +1,4 @@
-package JNovelDownloader.UI;
+package jNovel.ui;
 
 public class Replacement {
 

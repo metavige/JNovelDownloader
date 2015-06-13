@@ -1,4 +1,4 @@
-package JNovelDownloader.Kernel;
+package jNovel.kernel;
 
 import java.util.HashMap;
 import java.util.Map;
