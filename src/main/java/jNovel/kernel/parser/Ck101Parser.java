@@ -1,5 +1,6 @@
 package jNovel.kernel.parser;
 
+import jNovel.kernel.utils.Logger;
 import jNovel.kernel.utils.RegexUtils;
 
 import java.io.File;
@@ -23,6 +24,7 @@ import org.jsoup.select.Elements;
  */
 public class Ck101Parser extends AbstractParser implements INovelParser {
 
+    Map<String, String> pageTitleData;
     Map<String, String> rpData;
 
     public Ck101Parser() {
@@ -47,15 +49,19 @@ public class Ck101Parser extends AbstractParser implements INovelParser {
                 put("-", "─");
                 put("=", "＝");
                 put("#", "＃");
-
-                // 用來替換標題用，主要是 for Markdown calibre
-                put("^第(.*)([節章篇卷幕])(.*)第一([節章篇卷幕])(.*)", "# 第$1$2 $3\n## 第$1$2 $3 第一$4 $5");
-                put("^第(.*)([節章篇卷幕])(.*)第(.*)([節章篇卷幕])(.*)", "\n## 第$1$2 $3 第$4$5 $6");
-                put("^第(.*)([節章篇卷幕])(.*)", "\n# 第$1$2 $3");
-                put("  ", " ");
             }
         };
 
+        pageTitleData = new LinkedHashMap<String, String>() {
+
+            {
+                // 用來替換標題用，主要是 for Markdown calibre
+                put("^第(.*)([節章篇卷])(.*)第一([節章篇卷幕])(.*)$", "# 第$1$2 $3\n## 第$1$2 $3 第一$4 $5");
+                put("^第(.*)([節章篇卷])(.*)第(.*)([節章篇卷幕])(.*)$", "\n## 第$1$2 $3 第$4$5 $6");
+                put("^第(.*)([節章篇卷幕])(.*)$", "\n# 第$1$2 $3");
+                put("  ", " ");
+            }
+        };
     }
 
     /*
@@ -77,27 +83,13 @@ public class Ck101Parser extends AbstractParser implements INovelParser {
 
                 // Logger.printf("Get PageBody Size: %d", pageBodies.size());
                 for (Element pageElement : pageBodies) {
-                    
-                    // 抓到本文主體後，直接把所有 childnodes 取出，應該都是 textnode
-                    Node[] childrens = pageElement.childNodesCopy().toArray(new Node[] { });
+//                    Logger.printf(" ====== Page Block ====== %s ", html[n]);
+                    // 移除編輯狀態
+                    pageElement.select("i.pstatus").forEach(ele -> ele.remove());
+                    pageElement.select("font[color=\"#999999\"]").forEach(ele -> ele.remove());
+                    pageElement.select("img").forEach(ele -> ele.remove());
 
-                    for (int i = 0; i < childrens.length; i++) {
-                        Node node = childrens[i];
-
-                        if (node.nodeName() == "#text") {
-                            TextNode txtNode = (TextNode) node;
-                            String novelText = txtNode.text().trim();
-
-                            // 根據定義的規則，替換掉相關的字串
-                            novelText = RegexUtils.replace(novelText, rpData);
-
-                            appendLine(novelText);
-                        }
-
-                        if (node.nodeName() == "br") {
-                            appendLine();
-                        }
-                    }
+                    processElement(pageElement);
                 }
 
             }
@@ -114,6 +106,50 @@ public class Ck101Parser extends AbstractParser implements INovelParser {
         }
 
         return toString();
+    }
+
+    /**
+     * 處理每一個節點的資料，把它放進 Body 中
+     * 
+     * @param pageElement
+     */
+    private void processElement(Element pageElement) {
+
+        // 抓到本文主體後，直接把所有 childnodes 取出，應該都是 textnode
+        Node[] childrens = pageElement.childNodesCopy().toArray(new Node[] { });
+//        boolean isPageStart = true;
+//        Logger.printf("chilrens size: %d", childrens.length);
+
+        for (int i = 0; i < childrens.length; i++) {
+            Node node = childrens[i];
+            String novelText = null;
+
+            if (node.nodeName() == "#text") {
+                novelText = ((TextNode) node).text();
+            }
+            else if (node.nodeName() == "br") {
+                appendLine();
+            }
+            else {
+                // appendLine(((Element) node).text());
+                novelText = ((Element) node).text();
+                Logger.printf("%d (%s) - %s, %s", i, node.childNodeSize(), node.nodeName(), node.outerHtml());
+            }
+
+            // 只有在前面檢查出需要加入，才做下面的動作
+            if (novelText != null) {
+                novelText = novelText.trim();
+
+                // 根據定義的規則，替換掉相關的字串
+                novelText = RegexUtils.replace(novelText, rpData);
+
+                // 如果確認是每一篇主題的前幾行，應該都是每篇的標題，用標題的 regex 來替換
+                if (i < 10) {
+                    novelText = RegexUtils.replace(novelText, pageTitleData);
+                }
+                appendLine(novelText);
+            }
+        }
     }
 
 }
