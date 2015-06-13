@@ -10,7 +10,7 @@ import java.io.IOException;
 
 import javax.swing.JFrame;
 
-public class main {
+public class Main {
 
     /**
      * @param args

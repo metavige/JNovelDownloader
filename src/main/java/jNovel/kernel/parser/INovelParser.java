@@ -1,6 +1,5 @@
 package jNovel.kernel.parser;
 
-
 public interface INovelParser {
 
     /**
@@ -20,7 +19,7 @@ public interface INovelParser {
      * @param lineString
      */
     public void parseMessageBodyStart(String lineString);
-    
+
     /**
      * 處理本文的每一行資料
      * 
@@ -30,7 +29,6 @@ public interface INovelParser {
      */
     public void parseMessageBodyLine(String lineString);
 
-    
     /**
      * @param lineString
      * @return

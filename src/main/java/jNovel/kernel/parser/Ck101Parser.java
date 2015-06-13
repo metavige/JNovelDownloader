@@ -45,17 +45,10 @@ public class Ck101Parser extends AbstractParser implements INovelParser {
         boolean flag = false;
         int otherTable = 0; // 標記每一組訊息留言
 
-        /* 用於正規表示式的過濾，比replace all 快速準確 */
-        Matcher m_html;
-
-        // String regEx_html = "<[^>]+>";
-        Pattern pModStamp = Pattern
-                .compile(" 本帖最後由 \\S+ 於 \\d{4}-\\d{1,2}-\\d{1,2} \\d{2}:\\d{2} (\\S{2} )?編輯 ");
-
         for (int n = 0; n < html.length; n++) {
-            
+
             BufferedReader reader = FileUtils.readFile(html[n]);
-            
+
             if (reader == null) {
                 Logger.printf("無法讀取檔案！ %s", html[n]);
                 continue;
@@ -75,7 +68,7 @@ public class Ck101Parser extends AbstractParser implements INovelParser {
                             break;
                         case EnterBody:
                             // 第二階段，找出標題
-                            System.out.println(">>>>> 找到標題！");
+//                            System.out.println(">>>>> 找到標題！");
                             if (temp.indexOf("<h") >= 0) {// 出現標題
 
                                 // temp = Replace.replace(temp, " ", "");
@@ -95,7 +88,7 @@ public class Ck101Parser extends AbstractParser implements INovelParser {
                             break;
                         case EnterArticleBegin:
                             // 第三階段，找到文章的開頭
-                            System.out.println(">>>>> 找到文章的開頭！" + temp);
+//                            System.out.println(">>>>> 找到文章的開頭！" + temp);
 
                             if (temp.indexOf("class=\"postmessage\">") >= 0) {// 找出
                                 // 文章內容
@@ -119,23 +112,23 @@ public class Ck101Parser extends AbstractParser implements INovelParser {
                             break;
                         case EnterArticle:
                             // 第四階段，處理本文內容
-                            System.out.println(">>>>> 處理本文內容 " + temp);
+//                            System.out.println(">>>>> 處理本文內容 " + temp);
 
                             // 判斷是否到了結尾，要準備離開
                             if (temp.indexOf("<div ") >= 0) // 避免碰到下一階層
                             {
-                                System.out.println(">>>>> 發現 div，進入下一層");
+//                                System.out.println(">>>>> 發現 div，進入下一層");
                                 otherTable++;
                             }
 
                             if (temp.indexOf("</div>") >= 0) {
                                 if (otherTable > 0) // 從底層離開
                                 {
-                                    System.out.println(">>>>> 發現結尾，回到上一層");
+//                                    System.out.println(">>>>> 發現結尾，回到上一層");
                                     otherTable--;
                                 }
                                 else {
-                                    System.out.println(">>>>> 發現結尾，離開");
+//                                    System.out.println(">>>>> 發現結尾，離開");
                                     // 偵測是否離開了
                                     temp = temp.replace("</div>", " ");
                                     stage = NovelBodyParseStage.Parpare;
@@ -172,7 +165,7 @@ public class Ck101Parser extends AbstractParser implements INovelParser {
 
         return toString();
     }
-    
+
     /*
      * (non-Javadoc)
      * 
@@ -188,9 +181,19 @@ public class Ck101Parser extends AbstractParser implements INovelParser {
             lineString = lineString.replaceAll("<font color=\"#999999\">[^<>]+</font>", "");
         }
 
-        appendLine();
-        appendLine();
+        lineString = replaceHtmlTags(lineString);
+        
+        String firstLvlTitle = "^第(.*)([節章篇卷幕])(.*)";
+        String firstLvlRepl = "# 第$1$2 $3";
+        String secondLvlTitle = "^第(.*)([節章篇卷幕])(.*)第(.*)([節章篇卷幕])(.*)";
+        String secondLvlRepl = "## 第$1$2$3第$4$5$6";
+                
+        lineString = lineString.replaceAll(secondLvlTitle, secondLvlRepl);
+        lineString = lineString.replaceAll(firstLvlTitle, firstLvlRepl);
+        lineString = lineString.replaceAll("  ", " ");
+        
         appendLine(lineString);
+        appendLine();
     }
 
     /*
