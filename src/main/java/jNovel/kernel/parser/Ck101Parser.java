@@ -1,13 +1,19 @@
 package jNovel.kernel.parser;
 
-import jNovel.kernel.Replace;
-import jNovel.kernel.utils.FileUtils;
-import jNovel.kernel.utils.Logger;
+import jNovel.kernel.utils.RegexUtils;
 
-import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.stream.Stream;
+
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+import org.jsoup.nodes.TextNode;
+import org.jsoup.select.Elements;
 
 /**
  * 解析文章內容 - For ck101.com
@@ -17,10 +23,7 @@ import java.util.regex.Pattern;
  */
 public class Ck101Parser extends AbstractParser implements INovelParser {
 
-    static Pattern p_html = Pattern.compile("<[^>]+>", Pattern.CASE_INSENSITIVE);
-
-    static Pattern pModStamp = Pattern
-            .compile(" 本帖最後由 \\S+ 於 \\d{4}-\\d{1,2}-\\d{1,2} \\d{2}:\\d{2} (\\S{2} )?編輯 ");
+    Map<String, String> rpData;
 
     public Ck101Parser() {
 
@@ -31,220 +34,86 @@ public class Ck101Parser extends AbstractParser implements INovelParser {
 
         this.bookData = new StringBuilder();
         this.encoding = encoding;
+
+        rpData = new LinkedHashMap<String, String>() {
+
+            {
+                // 替換掉一般的特殊字元以及全型空白
+                put("　", "");
+                put("\u00A0", "");
+                put("\u0020", "");
+                // 把一些與 Markdown 有關的符號轉換成全型
+                put("\\*", "＊");
+                put("-", "─");
+                put("=", "＝");
+                put("#", "＃");
+
+                // 用來替換標題用，主要是 for Markdown calibre
+                put("^第(.*)([節章篇卷幕])(.*)第一([節章篇卷幕])(.*)", "# 第$1$2 $3\n## 第$1$2 $3 第一$4 $5");
+                put("^第(.*)([節章篇卷幕])(.*)第(.*)([節章篇卷幕])(.*)", "\n## 第$1$2 $3 第$4$5 $6");
+                put("^第(.*)([節章篇卷幕])(.*)", "\n# 第$1$2 $3");
+                put("  ", " ");
+            }
+        };
+
     }
 
+    /*
+     * (non-Javadoc)
+     * 
+     * @see jNovel.kernel.parser.INovelParser#parse(java.lang.String[])
+     * 
+     * 改採用 jgroup 來解析 document, 直接重點的 postmessage
+     * 所以就不需要再有階段處理了～
+     */
     @Override
     public String parse(String[] html) {
 
-        // boolean inContent = false;
-        NovelBodyParseStage stage = NovelBodyParseStage.Parpare; // 0=不再內文中 ,1=在<div class="pbody">
-                                                                 // 中,
-        // 2=在<div class="mes">中 ,
-        // 3=<div id="postmessage_~~~~" class="mes">中 ,
-        String temp;
-        boolean flag = false;
-        int otherTable = 0; // 標記每一組訊息留言
-
         for (int n = 0; n < html.length; n++) {
 
-            BufferedReader reader = FileUtils.readFile(html[n]);
-
-            if (reader == null) {
-                Logger.printf("無法讀取檔案！ %s", html[n]);
-                continue;
-            }
-            Logger.print(html[n] + "處理中");
-
             try {
-                while ((temp = reader.readLine()) != null) { // 一次讀取一行
-                    temp = temp.trim();
-                    switch (stage) {
-                        case Parpare:
-                            // System.out.println(">>>>> 找到本文！");
-                            // 第一階段，找出本文主體
-                            if (temp.indexOf("class=\"pbody") >= 0) {
-                                stage = NovelBodyParseStage.EnterBody;
-                            }
-                            break;
-                        case EnterBody:
-                            // 第二階段，找出標題
-//                            System.out.println(">>>>> 找到標題！");
-                            if (temp.indexOf("<h") >= 0) {// 出現標題
+                Document doc = Jsoup.parse(new File(html[n]), "UTF-8", "http://ck101.com/");
+                Elements pageBodies = doc.select(".postmessage");
 
-                                // temp = Replace.replace(temp, " ", "");
-                                temp.replaceAll(" ", "");
+                // Logger.printf("Get PageBody Size: %d", pageBodies.size());
+                for (Element pageElement : pageBodies) {
+                    
+                    // 抓到本文主體後，直接把所有 childnodes 取出，應該都是 textnode
+                    Node[] childrens = pageElement.childNodesCopy().toArray(new Node[] { });
 
-                                temp = replaceHtmlTags(temp);
+                    for (int i = 0; i < childrens.length; i++) {
+                        Node node = childrens[i];
 
-                                // bookData.append(temp);
-                                // bookData.append(lineSeparator);
-                                appendLine(temp);
-                            }
+                        if (node.nodeName() == "#text") {
+                            TextNode txtNode = (TextNode) node;
+                            String novelText = txtNode.text().trim();
 
-                            if (temp.indexOf("<div class=\"mes") >= 0) {
-                                // System.out.println(temp);
-                                stage = NovelBodyParseStage.EnterArticleBegin;
-                            }
-                            break;
-                        case EnterArticleBegin:
-                            // 第三階段，找到文章的開頭
-//                            System.out.println(">>>>> 找到文章的開頭！" + temp);
+                            // 根據定義的規則，替換掉相關的字串
+                            novelText = RegexUtils.replace(novelText, rpData);
 
-                            if (temp.indexOf("class=\"postmessage\">") >= 0) {// 找出
-                                // 文章內容
-                                // System.out.println(temp);
-                                stage = NovelBodyParseStage.EnterArticle;
-                                // String[] temp2 =
-                                // temp.split("class=\"postmessage\">");// 接取標題
-                                // if(temp2.length<=0)
-                                // temp = temp2[1];
+                            appendLine(novelText);
+                        }
 
-                                if (temp.indexOf("<div class=\"quote\">") >= 0) {
-                                    // 過濾引用
-                                    otherTable++;
-                                }
-
-                                parseMessageBodyStart(temp);
-
-                                // 如果有
-                                // 會有內容，如果沒有是空字串
-                            }
-                            break;
-                        case EnterArticle:
-                            // 第四階段，處理本文內容
-//                            System.out.println(">>>>> 處理本文內容 " + temp);
-
-                            // 判斷是否到了結尾，要準備離開
-                            if (temp.indexOf("<div ") >= 0) // 避免碰到下一階層
-                            {
-//                                System.out.println(">>>>> 發現 div，進入下一層");
-                                otherTable++;
-                            }
-
-                            if (temp.indexOf("</div>") >= 0) {
-                                if (otherTable > 0) // 從底層離開
-                                {
-//                                    System.out.println(">>>>> 發現結尾，回到上一層");
-                                    otherTable--;
-                                }
-                                else {
-//                                    System.out.println(">>>>> 發現結尾，離開");
-                                    // 偵測是否離開了
-                                    temp = temp.replace("</div>", " ");
-                                    stage = NovelBodyParseStage.Parpare;
-                                    flag = false;
-                                    // temp += lineSeparator + lineSeparator + lineSeparator;
-                                }
-                            }
-
-                            if (true) {
-                                parseMessageBodyLine(temp);
-                            }
-
-                            break;
-                        default:
-                            break;
+                        if (node.nodeName() == "br") {
+                            appendLine();
+                        }
                     }
                 }
+
             }
             catch (IOException e1) {
-                // TODO Auto-generated catch block
                 e1.printStackTrace();
             }
 
-            appendLine();
-
-            try {
-                reader.close();
-            }
-            catch (IOException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
+            // try {
+            // reader.close();
+            // }
+            // catch (IOException e) {
+            // e.printStackTrace();
+            // }
         }
 
         return toString();
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see jNovel.kernel.parser.INovelParser#parseMessageBodyStart(java.lang.String)
-     */
-    public void parseMessageBodyStart(String lineString) {
-
-        if (lineString.indexOf("<i class=\"pstatus\">") >= 0) { // 過慮修改時間
-            lineString = lineString.replaceAll("<i class=\"pstatus\">[^<>]+ </i>", "");
-        }
-        if (lineString.indexOf("<div class=\"quote\">") >= 0) { // 過濾
-            // 引用
-            lineString = lineString.replaceAll("<font color=\"#999999\">[^<>]+</font>", "");
-        }
-
-        lineString = replaceHtmlTags(lineString);
-        
-        String firstLvlTitle = "^第(.*)([節章篇卷幕])(.*)";
-        String firstLvlRepl = "# 第$1$2 $3";
-        String secondLvlTitle = "^第(.*)([節章篇卷幕])(.*)第(.*)([節章篇卷幕])(.*)";
-        String secondLvlRepl = "## 第$1$2$3第$4$5$6";
-                
-        lineString = lineString.replaceAll(secondLvlTitle, secondLvlRepl);
-        lineString = lineString.replaceAll(firstLvlTitle, firstLvlRepl);
-        lineString = lineString.replaceAll("  ", " ");
-        
-        appendLine(lineString);
-        appendLine();
-    }
-
-    /*
-     * (non-Javadoc)
-     * 
-     * @see jNovel.kernel.INovelParser#parseMessageBodyLine(java.lang.String)
-     */
-    @Override
-    public void parseMessageBodyLine(String lineString) {
-
-        // 如果只有換行符號，不處理
-        if (Pattern.matches("^<br />", lineString)) {
-            return;
-        }
-
-        Matcher m_html = pModStamp.matcher(lineString);
-
-        lineString = m_html.replaceAll("");
-        lineString = Replace.replace(lineString, "<br/>", lineSeparator);
-        lineString = Replace.replace(lineString, "<br />", lineSeparator);
-        lineString = Replace.replace(lineString, "&nbsp;", "");
-
-        lineString = replaceHtmlTags(lineString);
-
-        // if(flag==false &&
-        // temp.matches("第[一二三四五六七八九十百零1234567890 　]*章 [^<>]*"))
-        // //for Calibre 轉檔
-        // {
-        // String
-        // headLineString="<floor>"+Replace.replace(temp,
-        // "\r\n", "")+"</floor>";
-        // bookData.append(headLineString);
-        // bookData.append("\r\n");
-        // flag=true;
-        // }
-        lineString = lineString.replaceAll("^[ \t　]+", ""); // 過濾凸排
-
-        appendLine(lineString);
-    }
-
-    /*
-     * (non-Javadoc)
-     * 
-     * @see jNovel.kernel.INovelParser#replaceHtmlTags(java.lang.String)
-     */
-    @Override
-    public String replaceHtmlTags(String lineString) {
-
-        Matcher m_html = p_html.matcher(lineString);
-        lineString = m_html.replaceAll("");
-
-        return lineString;
-    }
 }

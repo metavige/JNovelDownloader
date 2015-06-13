@@ -15,15 +15,13 @@ public abstract class AbstractParser implements INovelParser {
         this.lineSeparator = System.getProperty("line.separator");
     }
 
-    @Override
-    public void appendLine(String line) {
+    protected void appendLine(String line) {
 
         // System.out.println(line);
-        bookData.append(line).append(lineSeparator);
+        bookData.append(line);
     }
 
-    @Override
-    public void appendLine() {
+    protected void appendLine() {
 
         bookData.append(lineSeparator);
     }
@@ -31,12 +29,21 @@ public abstract class AbstractParser implements INovelParser {
     @Override
     public String toString() {
 
+        String bookDataStr = bookData.toString();
+        // final format better text for read
+        bookDataStr = bookDataStr
+                .replaceAll("\n\n\n\n", "\n")
+                .replaceAll("\n\n\n", "\n")
+                    .replaceAll("\n\n", "\n")
+                    .replaceAll("\n", "\n\n")
+                    .replaceAll("\r", "\r\n");
+
         // System.out.println(bookData.toString());
         if (this.encoding) {
-            return encoder.StoT(bookData.toString());
+            return encoder.StoT(bookDataStr);
         }
         else {
-            return encoder.TtoS(bookData.toString());
+            return encoder.TtoS(bookDataStr);
         }
     }
 
