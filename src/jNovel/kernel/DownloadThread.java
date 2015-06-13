@@ -5,10 +5,6 @@ import jNovel.kernel.utils.FileUtils;
 import jNovel.kernel.utils.IMessageLogger;
 
 import java.io.BufferedReader;
-import java.io.FileOutputStream;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
 

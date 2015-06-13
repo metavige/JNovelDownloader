@@ -14,7 +14,6 @@ import jNovel.option.Option;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.InputMethodEvent;
 import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.IOException;

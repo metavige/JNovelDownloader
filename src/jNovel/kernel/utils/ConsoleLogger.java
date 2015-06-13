@@ -1,5 +1,11 @@
 package jNovel.kernel.utils;
 
+/**
+ * Console logger
+ * 
+ * @author rickychiang
+ *
+ */
 public class ConsoleLogger implements IMessageLogger {
 
     @Override

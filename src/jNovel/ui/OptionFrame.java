@@ -1,6 +1,5 @@
 package jNovel.ui;
 
-import jNovel.kernel.utils.IMessageLogger;
 import jNovel.option.Option;
 
 import java.awt.FlowLayout;
@@ -18,7 +17,6 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
-import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
 public class OptionFrame extends JFrame {

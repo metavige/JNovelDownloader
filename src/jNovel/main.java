@@ -1,12 +1,12 @@
 package jNovel;
 
-import java.io.IOException;
-
 import jNovel.kernel.Downloader;
 import jNovel.kernel.ReadHtml;
 import jNovel.kernel.utils.Logger;
 import jNovel.option.Option;
 import jNovel.ui.Frame;
+
+import java.io.IOException;
 
 import javax.swing.JFrame;
 

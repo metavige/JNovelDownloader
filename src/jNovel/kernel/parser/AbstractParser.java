@@ -1,12 +1,12 @@
 package jNovel.kernel.parser;
 
-import jNovel.kernel.Encoding;
+import jNovel.kernel.ChineseTransfer;
 
 public abstract class AbstractParser implements INovelParser {
 
     protected StringBuilder bookData;
     protected boolean encoding;
-    private Encoding encoder = new Encoding();
+    private ChineseTransfer encoder = new ChineseTransfer();
     protected String lineSeparator;
 
     public AbstractParser() {

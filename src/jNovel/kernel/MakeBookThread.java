@@ -171,7 +171,7 @@ public class MakeBookThread extends Thread {
                 e.printStackTrace();
             }
         }
-        Encoding encoding = new Encoding();
+        ChineseTransfer encoding = new ChineseTransfer();
         if (this.encoding) {
             result = encoding.StoT(bookData.toString());
         }

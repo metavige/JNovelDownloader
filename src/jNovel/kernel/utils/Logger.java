@@ -1,7 +1,12 @@
 package jNovel.kernel.utils;
 
-import java.io.Console;
 
+/**
+ * 整合 Logger 記錄
+ * 
+ * @author rickychiang
+ *
+ */
 public class Logger {
 
     private final static Logger Instance = new Logger();
