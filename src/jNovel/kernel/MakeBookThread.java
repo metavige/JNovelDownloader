@@ -1,20 +1,15 @@
 package jNovel.kernel;
 
 import jNovel.kernel.parser.INovelParser;
-import jNovel.kernel.parser.Ck101Parser;
 import jNovel.kernel.parser.NovelBodyParseStage;
 import jNovel.kernel.parser.ParserFactory;
+import jNovel.kernel.utils.FileUtils;
+import jNovel.kernel.utils.Logger;
 
 import java.io.BufferedReader;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import javax.swing.JTextArea;
 
 public class MakeBookThread extends Thread {
 
@@ -24,18 +19,17 @@ public class MakeBookThread extends Thread {
     private boolean encoding;
     private String result;
     private int type;
-    private JTextArea resultTextArea;
     private String lineSeparator;
 
     private INovelParser parser;
 
-    public MakeBookThread(String[] data, boolean encoding, int type, JTextArea resultTextArea) {
+    public MakeBookThread(String[] data, boolean encoding, int type) {
 
         html = data;
         bookData = new StringBuilder();
         this.encoding = encoding;
         this.type = type;
-        this.resultTextArea = resultTextArea;
+
         this.lineSeparator = System.getProperty("line.separator");
     }
 
@@ -81,19 +75,14 @@ public class MakeBookThread extends Thread {
         // String regEx_html = "<[^>]+>";
 
         for (int n = 0; n < html.length; n++) {
-            try {
-                reader = new BufferedReader(new InputStreamReader(new FileInputStream(html[n]),
-                        "UTF-8"));
+            
+            reader = FileUtils.ReadFile(html[n]);
+            
+            if (reader == null) {
+                Logger.printf("無法讀取檔案！ %s", html[n]);
+                continue;
             }
-            catch (UnsupportedEncodingException e1) {
-                // TODO Auto-generated catch block
-                e1.printStackTrace();
-            }
-            catch (FileNotFoundException e1) {
-                // TODO Auto-generated catch block
-                e1.printStackTrace();
-            } // 開啟檔案
-            System.out.println(html[n] + "處理中");
+            Logger.print(html[n] + "處理中");
 
             try {
                 while ((temp = reader.readLine()) != null) { // 一次讀取一行
@@ -194,7 +183,8 @@ public class MakeBookThread extends Thread {
     private void runType0() {
 
         // boolean inContent = false;
-        NovelBodyParseStage stage = NovelBodyParseStage.Parpare; // 0=不再內文中 ,1=在<div class="pbody"> 中,
+        NovelBodyParseStage stage = NovelBodyParseStage.Parpare; // 0=不再內文中 ,1=在<div class="pbody">
+                                                                 // 中,
         // 2=在<div class="mes">中 ,
         // 3=<div id="postmessage_~~~~" class="mes">中 ,
         String temp;
@@ -209,24 +199,14 @@ public class MakeBookThread extends Thread {
                 .compile(" 本帖最後由 \\S+ 於 \\d{4}-\\d{1,2}-\\d{1,2} \\d{2}:\\d{2} (\\S{2} )?編輯 ");
 
         for (int n = 0; n < html.length; n++) {
-            try {
-                reader = new BufferedReader(new InputStreamReader(new FileInputStream(html[n]),
-                        "UTF-8"));
+            
+            reader = FileUtils.ReadFile(html[n]);
+            
+            if (reader == null) {
+                Logger.printf("無法讀取檔案！ %s", html[n]);
+                continue;
             }
-            catch (UnsupportedEncodingException ex) {
-                ex.printStackTrace();
-                resultTextArea.append("[Error]: " + ex.getMessage());
-            }
-            catch (FileNotFoundException ex) {
-                ex.printStackTrace();
-                resultTextArea.append("[Error]: " + ex.getMessage());
-            }
-            // 開啟檔案
-
-            System.out.println(html[n] + "處理中");
-
-            resultTextArea.append(html[n] + "處理中" + lineSeparator);
-            resultTextArea.setCaretPosition(resultTextArea.getText().length());
+            Logger.print(html[n] + "處理中");
 
             try {
                 while ((temp = reader.readLine()) != null) { // 一次讀取一行
@@ -272,11 +252,11 @@ public class MakeBookThread extends Thread {
                                 // if(temp2.length<=0)
                                 // temp = temp2[1];
 
-                                if (temp.indexOf("<div class=\"quote\">") >= 0) { 
+                                if (temp.indexOf("<div class=\"quote\">") >= 0) {
                                     // 過濾引用
                                     otherTable++;
                                 }
-                                
+
                                 parser.parseMessageBodyStart(temp);
 
                                 // 如果有
@@ -306,7 +286,7 @@ public class MakeBookThread extends Thread {
                                     temp = temp.replace("</div>", " ");
                                     stage = NovelBodyParseStage.Parpare;
                                     flag = false;
-//                                    temp += lineSeparator + lineSeparator + lineSeparator;
+                                    // temp += lineSeparator + lineSeparator + lineSeparator;
                                 }
                             }
 

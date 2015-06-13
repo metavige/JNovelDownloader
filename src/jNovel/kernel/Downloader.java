@@ -1,28 +1,28 @@
 package jNovel.kernel;
 
+import jNovel.kernel.utils.FileUtils;
+import jNovel.kernel.utils.Logger;
 import jNovel.option.Option;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.List;
 import java.util.Map;
 
-import javax.swing.JTextArea;
-
 public class Downloader {
 
     public static final String MOBILE_USER_AGENT = "Mozilla/5.0 (Linux; U; Android 4.0.3; zh-tw; HTC_Sensation_Z710e Build/IML74K)AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 Mobile Safari/534.30";
+
     private String[] urlStrings;
     private int toPage;
     private UrlData urlData;
     private static String sessionId;
-    private JTextArea resultTextArea;
 
     public Downloader() {
 
@@ -30,27 +30,10 @@ public class Downloader {
 
     public void setup(int page, String urlString) {
 
+        Logger.print("分析網址");
+
         urlData = Analysis.analysisUrl(urlString); // 分析網址
         this.toPage = page;
-    }
-
-    public void setup(int page, String urlString, JTextArea resultTextArea) {
-
-        this.resultTextArea = resultTextArea;
-        printMessage("分析網址");
-
-        setup(page, urlString);
-    }
-
-    public void printMessage(String message) {
-
-        if (resultTextArea == null) {
-            System.out.println(message);
-        }
-        else {
-            resultTextArea.append(message + "\r\n");
-            resultTextArea.setCaretPosition(resultTextArea.getText().length());
-        }
     }
 
     public UrlData getUrlData() {
@@ -60,27 +43,24 @@ public class Downloader {
 
     public void generateUrlList() {
 
-        printMessage("產生下載清單...");
+        Logger.print("產生下載清單...");
         // http://ck101.com/thread-1753100-55-1.html
         urlStrings = new String[toPage - urlData.page + 1];
+        
         if (urlData.domain.indexOf("eyny") >= 0) {
             // http://www02.eyny.com/archiver/?tid-8910527.html&mobile=yes
-            String temp = "http://"
-                    + urlData.domain
-                    + "/archiver/?tid-"
-                    + String.valueOf(urlData.Tid)
-                    + "&mobile=yes&page=";
+            String temp = String.format("http://%s/archiver/?tid-%s&mobile=yes&page=",
+                    urlData.domain,
+                    String.valueOf(urlData.Tid));
             int m = 0;
             for (int n = urlData.page; n <= toPage; n++) {
                 urlStrings[m++] = temp + n;
             }
         }
         else {
-            String temp = "http://"
-                    + urlData.domain
-                    + "/thread-"
-                    + String.valueOf(urlData.Tid)
-                    + "-";
+            String temp = String.format("http://%s/thread-%s-",
+                    urlData.domain,
+                    String.valueOf(urlData.Tid));
             int m = 0;
             for (int n = urlData.page; n <= toPage; n++) {
                 urlStrings[m++] = temp + n + "-1.html";
@@ -88,56 +68,20 @@ public class Downloader {
         }
     }
 
-    /***************** 以下function 是舊有的downloading ***************************/
-    // public boolean downloadingOld(Option option, ReadHtml book,
-    // JTextArea resultTextArea) throws IOException {// 需要重點加速的地方
-    // if (urlData.wrongUrl) {
-    // return false;
-    // } else {
-    // generateUrlList();
-    // // http://ck101.com/thread-1753100-55-1.html
-    // int m = 0;
-    // String temp;
-    // for (int n = urlData.page; n <= toPage; n++) {
-    // URL url = new URL(urlStrings[m++]); // 建立URL物件
-    //
-    // DataInputStream in = new DataInputStream(url.openStream());
-    // temp = option.tempPath + "thread-" + urlData.Tid + "-" + n
-    // + "-1.html";
-    // RandomAccessFile out = new RandomAccessFile(temp, "rw");
-    // try {
-    // // resultTextArea.append("開始下載檔案: " + temp); // 在UI上顯示結果
-    // // resultTextArea.paintImmediately(resultTextArea.getBounds());
-    // // resultTextArea.setCaretPosition(resultTextArea.getDocument()
-    // // .getLength());
-    // System.out.print("開始下載檔案: " + temp);
-    // byte data;
-    // // 複製檔案
-    // while (true) {
-    // data = (byte) in.readByte();
-    // out.writeByte(data);
-    // }
-    // } catch (EOFException e) {
-    // }
-    // // resultTextArea.append("...檔案下載成功...\r\n");
-    // // resultTextArea.paintImmediately(resultTextArea.getBounds());
-    // // resultTextArea.setCaretPosition(resultTextArea.getDocument()
-    // // .getLength());
-    // System.out.println("下載成功");
-    //
-    // book.addFileName(temp); // 放入要處理檔案的清單中
-    // in.close(); // 關閉串流
-    // out.close();
-    // }
-    // return true;
-    // }
-    // }
+    /**
+     * 下載檔案，透過 Multi-Thread 加速～
+     * 
+     * @param option
+     * @param book
+     * @return
+     * @throws IOException
+     */
+    public boolean downloading(Option option, ReadHtml book) throws IOException {
 
-    public boolean downloading(Option option, ReadHtml book, JTextArea resultTextArea)
-        throws IOException {// 需要重點加速的地方
+        // 需要重點加速的地方
 
         if (urlData.wrongUrl) {
-            printMessage("網址有問題 無法分析");
+            Logger.print("網址有問題 無法分析");
             return false;
         }
         else {
@@ -152,6 +96,7 @@ public class Downloader {
             // int threadNumber = 4;
             int morethread = urlStrings.length % option.threadNumber; // 有多少執行續會多一個檔案
             int tempNumber = urlStrings.length / option.threadNumber; // 每個執行續最少多少個檔案
+
             DownloadThread[] downloadThread = new DownloadThread[option.threadNumber];
             String[] from;
             String[] to;
@@ -181,7 +126,7 @@ public class Downloader {
                     from[y] = urlStrings[m];
                     to[y] = totalTo[m++];
                 }
-                downloadThread[x] = new DownloadThread(from, to, x, resultTextArea);
+                downloadThread[x] = new DownloadThread(from, to, x);
                 // 放入任務
                 // downloadThread[x] = new DownloadThread(from, to, x); // 放入任務
                 book.addFileName(to);//
@@ -313,19 +258,27 @@ public class Downloader {
         con.setRequestProperty("User-Agent", MOBILE_USER_AGENT);
 
         con.connect();
-        InputStream inStream = (InputStream) con.getInputStream();
-        BufferedReader reader = new BufferedReader(new InputStreamReader(inStream, "utf8"));
+        
+//        BufferedReader reader = new BufferedReader(new InputStreamReader(inStream, "utf8"));
+        BufferedReader reader = FileUtils.ReadFileFromStream(con.getInputStream());
+        
         String line = "";
         StringBuffer total = new StringBuffer();
         while ((line = reader.readLine()) != null) {
             total.append(line + "\n");
-
         }
-        OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream("K:\123.html"),
-                "UTF-8");
-        writer.write(total.toString());
-        writer.flush();
-        writer.close();
+        
+        String tempFilePath = File.createTempFile("loginRequest", ".tmp").getAbsolutePath();
+        
+        Logger.printf("寫入 temp : %s", tempFilePath);
+        FileUtils.WriteData(tempFilePath, total.toString());
+//        
+//        OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream("K:\123.html"),
+//                "UTF-8");
+//        writer.write(total.toString());
+//        writer.flush();
+//        writer.close();
+        
         System.out.println("下載完成");
 
     }

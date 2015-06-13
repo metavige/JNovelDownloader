@@ -1,5 +1,6 @@
 package jNovel.ui;
 
+import jNovel.kernel.utils.IMessageLogger;
 import jNovel.option.Option;
 
 import java.awt.FlowLayout;
@@ -46,7 +47,7 @@ public class OptionFrame extends JFrame {
     // private JButton exitButton;
     private boolean tempEncoding;
 
-    public OptionFrame(final Option option, final JTextArea resulTextArea) {
+    public OptionFrame(final Option option) {
 
         super("設置");
         setLayout(new FlowLayout());
@@ -156,7 +157,7 @@ public class OptionFrame extends JFrame {
                     // TODO Auto-generated catch block
                     e.printStackTrace();
                 }
-                option.printOption(resulTextArea);
+                option.printOption();
                 closeFrame();
             }
         });
@@ -170,7 +171,7 @@ public class OptionFrame extends JFrame {
 
     private class RadioButtonHandler implements ItemListener { // 當選擇 RADIO
 
-                                                               // 按鈕時觸發
+        // 按鈕時觸發
         private boolean encode;
 
         public RadioButtonHandler(boolean a) {
