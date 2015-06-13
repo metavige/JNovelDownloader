@@ -55,7 +55,7 @@ public class ReadHtml {
     public boolean makeBook(Option option) throws IOException {
 
         String filename = option.novelPath + bookName + ".txt";
-        writer = FileUtils.GetWriteStream(filename);
+        writer = FileUtils.getWriteStream(filename);
         
         writer.write(bookName + "\r\n" + author + "\r\n");
 
@@ -106,16 +106,19 @@ public class ReadHtml {
 
     public void delTempFile() {
 
-        System.out.println("刪除暫存檔中..");
+        Logger.print("刪除暫存檔中..");
         File temp;
         for (int n = 0; n < havethread; n++) {
             for (int m = 0; m < fileName[n].length; m++) {
                 temp = new File(fileName[n][m]);
-                if (temp.exists()) temp.delete();
+                if (temp.exists()) {
+                    temp.delete();
+                    Logger.printf("刪除檔案 ... %s", temp.getAbsolutePath());
+                }
             }
         }
 
-        System.out.println("刪除完畢");
+        Logger.print("刪除完畢");
     }
 
 }

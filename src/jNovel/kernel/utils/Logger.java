@@ -33,7 +33,7 @@ public class Logger {
         if (IsLogWithConsole) {
             DefaultLogger.printf(format, args);
         }
-        GetLogger().printf(format, args);
+        getLogger().printf(format, args);
     }
 
     public static void print(String message) {
@@ -41,10 +41,10 @@ public class Logger {
         if (IsLogWithConsole) {
             DefaultLogger.printf(message);
         }
-        GetLogger().print(message);
+        getLogger().print(message);
     }
 
-    public static IMessageLogger GetLogger() {
+    public static IMessageLogger getLogger() {
 
         if (Instance._internalLogger == null) {
             Instance._internalLogger = DefaultLogger;
@@ -52,7 +52,7 @@ public class Logger {
         return Instance._internalLogger;
     }
 
-    public static void DisableConsoleLog(boolean isDisableConsoleLog) {
+    public static void disableConsoleLog(boolean isDisableConsoleLog) {
 
         IsLogWithConsole = isDisableConsoleLog;
     }

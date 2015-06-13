@@ -25,7 +25,7 @@ public class Option {
 
         if (ifNoSetUp()) {
 
-            BufferedReader reader = FileUtils.ReadFile(file);
+            BufferedReader reader = FileUtils.readFile(file);
             
             temp = reader.readLine();
             temp2 = temp.split("-");
@@ -75,7 +75,6 @@ public class Option {
         temp.mkdir();
         temp = new File(novelPath);
         temp.mkdir();
-
     }
 
     private boolean ifNoSetUp() {
@@ -92,7 +91,7 @@ public class Option {
         sb.append("replace-" + String.valueOf(replace) + FileUtils.LineSeparator);
         sb.append("threadNumber-" + String.valueOf(threadNumber) + FileUtils.LineSeparator);
         
-        FileUtils.WriteData(file, sb.toString());
+        FileUtils.writeData(file, sb.toString());
     }
 
     public void saveOption() throws IOException {
@@ -106,7 +105,7 @@ public class Option {
         sb.append("replace-" + String.valueOf(replace) + FileUtils.LineSeparator);
         sb.append("threadNumber-" + String.valueOf(threadNumber) + FileUtils.LineSeparator);
         
-        FileUtils.WriteData(file, sb.toString());
+        FileUtils.writeData(file, sb.toString());
         
         /**檢查檔案路徑是否存在***/
         File tempFile = new File(tempPath);

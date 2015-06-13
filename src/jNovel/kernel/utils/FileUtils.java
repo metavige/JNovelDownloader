@@ -17,10 +17,10 @@ public class FileUtils {
     public static String LineSeparator = System.getProperty("line.separator");
     public static String FileSeparator = System.getProperty("file.separator");
 
-    public static BufferedReader ReadFile(File file) {
+    public static BufferedReader readFile(File file) {
 
         try {
-            return ReadFileFromStream(new FileInputStream(file));
+            return readFileFromStream(new FileInputStream(file));
         }
         catch (Exception ex) {
             ex.printStackTrace();
@@ -28,31 +28,31 @@ public class FileUtils {
         } // 開啟檔案
     }
 
-    public static BufferedReader ReadFile(String filename) {
+    public static BufferedReader readFile(String filename) {
 
-        return ReadFile(new File(filename));
+        return readFile(new File(filename));
     }
 
-    public static BufferedReader ReadFileFromStream(InputStream inStream)
+    public static BufferedReader readFileFromStream(InputStream inStream)
         throws UnsupportedEncodingException {
 
         return new BufferedReader(new InputStreamReader(inStream, DEFAULT_FILE_ENCODING));
     }
 
-    public static void WriteData(String filename, String data) throws IOException {
+    public static void writeData(String filename, String data) throws IOException {
 
-        WriteData(new File(filename), data);
+        writeData(new File(filename), data);
     }
 
-    public static void WriteData(File file, String data) throws IOException {
+    public static void writeData(File file, String data) throws IOException {
 
-        OutputStreamWriter writer = GetWriteStream(file);
+        OutputStreamWriter writer = getWriteStream(file);
         writer.write(data);
         writer.flush();
         writer.close();
     }
 
-    public static OutputStreamWriter GetWriteStream(File file)
+    public static OutputStreamWriter getWriteStream(File file)
         throws UnsupportedEncodingException,
             FileNotFoundException {
 
@@ -61,7 +61,7 @@ public class FileUtils {
         return writer;
     }
 
-    public static OutputStreamWriter GetWriteStream(String filename)
+    public static OutputStreamWriter getWriteStream(String filename)
         throws UnsupportedEncodingException,
             FileNotFoundException {
 

@@ -144,7 +144,7 @@ public class DownloadThread extends Thread {
 
                 connection.connect();
 
-                BufferedReader reader = FileUtils.ReadFileFromStream(connection.getInputStream());
+                BufferedReader reader = FileUtils.readFileFromStream(connection.getInputStream());
 
                 // InputStream inStream = (InputStream) connection.getInputStream();
                 // BufferedReader reader = new BufferedReader(new InputStreamReader(inStream,
@@ -184,7 +184,7 @@ public class DownloadThread extends Thread {
 
             }
             try {
-                FileUtils.WriteData(to[n], total.toString());
+                FileUtils.writeData(to[n], total.toString());
                 
                 messager.print("下載完成");
             }

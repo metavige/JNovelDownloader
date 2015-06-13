@@ -259,7 +259,7 @@ public class Downloader {
         con.connect();
         
 //        BufferedReader reader = new BufferedReader(new InputStreamReader(inStream, "utf8"));
-        BufferedReader reader = FileUtils.ReadFileFromStream(con.getInputStream());
+        BufferedReader reader = FileUtils.readFileFromStream(con.getInputStream());
         
         String line = "";
         StringBuffer total = new StringBuffer();
@@ -270,7 +270,7 @@ public class Downloader {
         String tempFilePath = File.createTempFile("loginRequest", ".tmp").getAbsolutePath();
         
         Logger.printf("寫入 temp : %s", tempFilePath);
-        FileUtils.WriteData(tempFilePath, total.toString());
+        FileUtils.writeData(tempFilePath, total.toString());
 //        
 //        OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream("K:\123.html"),
 //                "UTF-8");

@@ -1,5 +1,6 @@
 package jNovel.kernel.parser;
 
+
 public interface INovelParser {
 
     /**
@@ -13,6 +14,11 @@ public interface INovelParser {
      */
     public void appendLine();
 
+    /**
+     * 處理每篇單元文章的開頭
+     * 
+     * @param lineString
+     */
     public void parseMessageBodyStart(String lineString);
     
     /**
@@ -30,5 +36,7 @@ public interface INovelParser {
      * @return
      */
     public String replaceHtmlTags(String lineString);
+
+    public abstract String parse(String[] html);
 
 }
