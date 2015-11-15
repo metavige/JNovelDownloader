@@ -54,7 +54,7 @@ public class ReadHtml {
 
     public boolean makeBook(Option option) throws IOException {
 
-        String filename = option.novelPath + bookName + ".txt";
+        String filename = String.format("%s%s - %s%s", option.novelPath, author, bookName , ".txt");
         writer = FileUtils.getWriteStream(filename);
         
         writer.write(bookName + "\r\n" + author + "\r\n");

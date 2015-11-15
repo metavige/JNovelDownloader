@@ -43,7 +43,7 @@ public class Option {
                 temp2 = temp.split("-");
                 threadNumber = Integer.parseInt(temp2[1]);
             }
-            else threadNumber = 4;
+            else threadNumber = 1;
             reader.close();
             /**檢查檔案路徑是否存在***/
             tempFile = new File(tempPath);
